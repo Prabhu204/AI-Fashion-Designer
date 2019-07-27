@@ -8,11 +8,11 @@ from torch import nn
 #  Discriminator
 # input_channel will be 3 for RGB, 1 for Gray scale)
 class Disc(nn.Module):
-    def __init__(self, num_Channels, num_DisFeaturesMaps, latent_vectors):
+    def __init__(self, num_Channels, num_DisFeaturesMaps, vector_size):
         super(Disc,self).__init__()
         self.num_DisFeaturesMaps = num_DisFeaturesMaps
         self.num_Channels = num_Channels
-        self.latent_vectors = latent_vectors
+        self.vector_size = vector_size
         self.ConvD1 = nn.Sequential(nn.Conv2d(num_Channels, num_DisFeaturesMaps, kernel_size=4,stride=2, padding=1, bias= False),
                                     nn.LeakyReLU(0.02, inplace=True))
         self.ConvD2 = nn.Sequential(nn.Conv2d(num_DisFeaturesMaps, num_DisFeaturesMaps*2, kernel_size=4, stride=2, padding=1,bias=False),
@@ -24,7 +24,7 @@ class Disc(nn.Module):
         self.ConvD4 = nn.Sequential(nn.Conv2d(num_DisFeaturesMaps * 4, num_DisFeaturesMaps * 8, kernel_size=4, stride=2, padding=1, bias=False),
                                     nn.BatchNorm2d(num_DisFeaturesMaps * 8),
                                     nn.LeakyReLU(0.02, inplace=True))
-        self.ConvD5 = nn.Sequential(nn.Conv2d(num_DisFeaturesMaps * 8, latent_vectors, kernel_size=4, stride=1, padding=0, bias=False),
+        self.ConvD5 = nn.Sequential(nn.Conv2d(num_DisFeaturesMaps * 8, vector_size, kernel_size=4, stride=1, padding=0, bias=False),
                                     nn.Sigmoid())
 
     def forward(self, x):

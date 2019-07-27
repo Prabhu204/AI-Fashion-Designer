@@ -10,12 +10,12 @@ import torch.nn as nn
 # num_Outputchannels --> orignal image channels (i.e 3 for RGB, 1 for Gray scale)
 # Generator
 class Gen(nn.Module):
-    def __init__(self, num_GenFeatureMaps, latent_vector, num_OutputChannels):
+    def __init__(self, num_GenFeatureMaps, vector_size, num_OutputChannels):
         super(Gen, self).__init__()
         self.num_GenFeatureMaps  =num_GenFeatureMaps
-        self.latent_vector = latent_vector
+        self.vector_size = vector_size
         self.num_OutputChannels = num_OutputChannels
-        self.ConvG1= nn.Sequential(nn.ConvTranspose2d(latent_vector,num_GenFeatureMaps*8, kernel_size=4,stride=1, padding=0,bias=False),
+        self.ConvG1= nn.Sequential(nn.ConvTranspose2d(vector_size,num_GenFeatureMaps*8, kernel_size=4,stride=1, padding=0,bias=False),
                                    nn.BatchNorm2d(num_GenFeatureMaps*8),
                                    nn.ReLU(True))
         self.ConvG2 =nn.Sequential(nn.ConvTranspose2d(num_GenFeatureMaps*8, num_GenFeatureMaps*4,kernel_size= 4,stride=2,padding=1,bias=False),

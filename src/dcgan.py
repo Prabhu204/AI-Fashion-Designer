@@ -43,8 +43,8 @@ def weights_init(m):
         nn.init.constant_(m.bias.data, 0)
 
 
-model_G = Gen(num_GenFeatureMaps= 64, num_OutputChannels= 3, latent_vector= 100).to(device)
-model_D = Disc(num_Channels=3, num_DisFeaturesMaps= 64, latent_vectors= 100).to(device)
+model_G = Gen(num_GenFeatureMaps= 64, num_OutputChannels= 3, vector_size= 100).to(device)
+model_D = Disc(num_Channels=3, num_DisFeaturesMaps= 64, vector_size= 100).to(device)
 
 model_G.apply(weights_init)
 model_D.apply(weights_init)
