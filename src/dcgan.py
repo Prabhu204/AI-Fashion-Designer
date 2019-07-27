@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import torchvision.datasets as dset
 import torchvision.utils as vutils
 import numpy as np
+from src.generator import Gen
 
 torch.manual_seed(546)
 
@@ -41,38 +42,6 @@ def weights_init(m):
         nn.init.constant_(m.bias.data, 0)
 
 
-# latent space_vectors --> size of the input (here considered as 100)
-# num_Outputchannels --> orignal image channels (i.e 3 for RGB, 1 for Gray scale)
-class Gen(nn.Module):
-    def __init__(self, device, num_GenFeatureMaps, latent_vector, num_OutputChannels):
-        super(Gen, self).__init__()
-        self.device = device
-        self.num_GenFeatureMaps  =num_GenFeatureMaps
-        self.latent_vector = latent_vector
-        self.num_OutputChannels = num_OutputChannels
-        self.ConvG1= nn.Sequential(nn.ConvTranspose2d(latent_vector,num_GenFeatureMaps*8, kernel_size=4,stride=1, padding=0,bias=False),
-                                   nn.BatchNorm2d(num_GenFeatureMaps*8),
-                                   nn.ReLU(True))
-        self.ConvG2 =nn.Sequential(nn.ConvTranspose2d(num_GenFeatureMaps*8, num_GenFeatureMaps*4,kernel_size= 4,stride=2,padding=1,bias=False),
-                                   nn.BatchNorm2d(num_GenFeatureMaps*4),
-                                   nn.ReLU(True))
-        self.ConvG3 = nn.Sequential(nn.ConvTranspose2d(num_GenFeatureMaps*4,num_GenFeatureMaps*2, kernel_size=4, stride=2, padding=1, bias=False),
-                                    nn.BatchNorm2d(num_GenFeatureMaps*2),
-                                    nn.ReLU(True))
-        self.ConvG4 = nn.Sequential(nn.ConvTranspose2d(num_GenFeatureMaps*2, num_GenFeatureMaps, kernel_size=4, stride=2, padding= 1, bias=False),
-                                    nn.BatchNorm2d(num_GenFeatureMaps),
-                                    nn.ReLU(True))
-        self.ConvG4 = nn.Sequential(nn.ConvTranspose2d(num_GenFeatureMaps, num_OutputChannels, kernel_size=4, stride=2, padding=1, bias= False),
-                                    nn.Tanh())
+model  = Gen(num_GenFeatureMaps= 64, num_OutputChannels= 3, latent_vector= 100).to(device)
 
-    def forward(self, x):
-        output = self.ConvG1(x)
-        output = self.ConvG2(output)
-        output = self.ConvG3(output)
-        output = self.ConvG4(output)
-        return output
-
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else 'cpu')
-model  = Gen(device, num_GenFeatureMaps= 64, num_OutputChannels= 3, latent_vector= 100)
-print(model)
+model.apply(weights_init)
