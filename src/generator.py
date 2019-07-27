@@ -27,7 +27,7 @@ class Gen(nn.Module):
         self.ConvG4 = nn.Sequential(nn.ConvTranspose2d(num_GenFeatureMaps*2, num_GenFeatureMaps, kernel_size=4, stride=2, padding= 1, bias=False),
                                     nn.BatchNorm2d(num_GenFeatureMaps),
                                     nn.ReLU(True))
-        self.ConvG4 = nn.Sequential(nn.ConvTranspose2d(num_GenFeatureMaps, num_OutputChannels, kernel_size=4, stride=2, padding=1, bias= False),
+        self.ConvG5 = nn.Sequential(nn.ConvTranspose2d(num_GenFeatureMaps, num_OutputChannels, kernel_size=4, stride=2, padding=1, bias= False),
                                     nn.Tanh())    # tanh function returns input data range [-1, 1]
 
     def forward(self, x):
@@ -35,4 +35,5 @@ class Gen(nn.Module):
         output = self.ConvG2(output)
         output = self.ConvG3(output)
         output = self.ConvG4(output)
+        output = self.ConvG5(output)
         return output

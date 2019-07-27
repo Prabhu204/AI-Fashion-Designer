@@ -13,6 +13,7 @@ import torchvision.datasets as dset
 import torchvision.utils as vutils
 import numpy as np
 from src.generator import Gen
+from src.discriminator import Disc
 
 torch.manual_seed(546)
 
@@ -42,6 +43,8 @@ def weights_init(m):
         nn.init.constant_(m.bias.data, 0)
 
 
-model  = Gen(num_GenFeatureMaps= 64, num_OutputChannels= 3, latent_vector= 100).to(device)
+model_G = Gen(num_GenFeatureMaps= 64, num_OutputChannels= 3, latent_vector= 100).to(device)
+model_D = Disc(num_Channels=3, num_DisFeaturesMaps= 64, latent_vectors= 100).to(device)
 
-model.apply(weights_init)
+model_G.apply(weights_init)
+model_D.apply(weights_init)
