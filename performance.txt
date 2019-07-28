@@ -1,0 +1,2 @@
+For iter 413/1583 with epoch 1 LossD 27.63102149963379 LossG 0.0 D(X) 1.0 D(G(z)) 1.0/0.0
+

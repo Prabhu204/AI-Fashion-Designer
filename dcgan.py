@@ -14,6 +14,8 @@ import torchvision.utils as vutils
 import numpy as np
 from src.generator import Gen
 from src.discriminator import Disc
+import matplotlib.animation as annime
+from IPython.display import HTML
 
 torch.manual_seed(546)
 
@@ -33,6 +35,7 @@ plt.figure(figsize=(8,8))
 plt.axis('off')
 plt.title("Train set images")
 plt.imshow(np.transpose(vutils.make_grid(sample[0].to(device)[:64], padding= 2, normalize= True).cpu(),(1,2,0)))
+plt.savefig('fig/sample_image.png')
 
 # initialize weights for Generator and Discriminator networks
 def weights_init(m):
@@ -51,7 +54,8 @@ def plot_fig(Gen_losses, Dis_losses):
     plt.xlabel("Iterations")
     plt.ylabel("Loss")
     plt.legend()
-    plt.show()
+    plt.savefig('fig/Loss.png')
+    return plt.show()
 
 
 def train():
@@ -89,7 +93,7 @@ def train():
             real_data = data[0].to(device)
             realSize = real_data.shape[0]
             labels = torch.full((realSize,), real_imgLable, device= device) # torch.Size([128])
-            print(labels)
+            # print(labels)
             real_predictions= model_D(real_data)   # torch.Size([128, 1, 1, 1])
             real_predictions.view(-1)  # torch.Size([128])
             real_errD = criterion(real_predictions, labels)
@@ -101,9 +105,9 @@ def train():
             noise = torch.randn(realSize, 100, 1,1, device= device)
             fake_data= model_G(noise)
             labels.fill_(fake_imgLabel)
-            print(labels)
-            fake_predictions=model_D(fake_data)  #torch.Size([128, 1, 1, 1])
-            fake_predictions.view(-1).detach().cpu()  #torch.Size([128])
+            # print(labels)
+            fake_predictions=model_D(fake_data.detach())  #torch.Size([128, 1, 1, 1])
+            fake_predictions.view(-1)  #torch.Size([128])
             fake_errD = criterion(fake_predictions, labels)
             fake_errD.backward()
             D_G_z1 = fake_predictions.mean().item()
@@ -117,11 +121,11 @@ def train():
             """
             model_G.zero_grad()
             labels.fill_(real_imgLable)
-            print('********')
-            print(fake_data.size())
+            # print('********')
+            # print(fake_data.size())
             predictionsG = model_D(fake_data)
             predictionsG.view(-1)
-            print(predictionsG.view(-1))
+            # print(predictionsG.view(-1))
             errG = criterion(predictionsG, labels)
             errG.backward()
             D_G_z2 = errG.mean().item()
@@ -140,7 +144,21 @@ def train():
                     fake_image = model_G(fixed_noise).detach().cpu()
                 img_list.append(vutils.make_grid(fake_image, padding=2,normalize=True))
                 iters += 1
-            break
         break
-    figure = plot_fig(Gen_losses=G_loss, Dis_losses=D_loss)
+    loss_plot = plot_fig(Gen_losses=G_loss, Dis_losses=D_loss)
+    return loss_plot, img_list
+
+if __name__ == '__main__':
+    loss_plot, img_list = train()
+    # visualize the fake images
+    fig = plt.figure(figsize=(8,8))
+    plt.axis("off")
+    img = [[plt.imshow(np.transpose(i, (1,2,0)),animated= True)] for i in img_list]
+    animation_ = annime.ArtistAnimation(fig, img, interval= 1000, repeat_delay= 1000, blit=True)
+    animation_.save('fig/animation.gif', writer= 'imagemagick',fps=60)
+    print(loss_plot)
+    print(HTML(animation_.to_jshtml()))
+
+
+
 
