@@ -24,7 +24,7 @@ class Disc(nn.Module):
         self.ConvD4 = nn.Sequential(nn.Conv2d(num_DisFeaturesMaps * 4, num_DisFeaturesMaps * 8, kernel_size=4, stride=2, padding=1, bias=False),
                                     nn.BatchNorm2d(num_DisFeaturesMaps * 8),
                                     nn.LeakyReLU(0.02, inplace=True))
-        self.ConvD5 = nn.Sequential(nn.Conv2d(num_DisFeaturesMaps * 8, vector_size, kernel_size=4, stride=1, padding=0, bias=False),
+        self.ConvD5 = nn.Sequential(nn.Conv2d(num_DisFeaturesMaps * 8, 1, kernel_size=4, stride=1, padding=0, bias=False),
                                     nn.Sigmoid())
 
     def forward(self, x):
