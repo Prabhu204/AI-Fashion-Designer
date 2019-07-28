@@ -2,7 +2,7 @@
 """
 @author: Prabhu <prabhu.appalapuri@gmail.com>
 """
-
+import os
 import torch
 import torch.nn as nn
 import torchvision.transforms as transform
@@ -21,6 +21,7 @@ torch.manual_seed(546)
 
 image_size = 64  # using image size as 64x64 with 3 channel i.e 3x64x64
 total_epochs = 15
+# path = 'results/performance.txt'
 dataset = dset.ImageFolder(root = 'data/celeba', transform = transform.Compose([transform.Resize(image_size),
                                                                             transform.CenterCrop(image_size),
                                                                             transform.ToTensor(),
@@ -36,6 +37,7 @@ plt.axis('off')
 plt.title("Train set images")
 plt.imshow(np.transpose(vutils.make_grid(sample[0].to(device)[:64], padding= 2, normalize= True).cpu(),(1,2,0)))
 plt.savefig('fig/sample_image.png')
+plt.close()
 
 # initialize weights for Generator and Discriminator networks
 def weights_init(m):
@@ -55,10 +57,12 @@ def plot_fig(Gen_losses, Dis_losses):
     plt.ylabel("Loss")
     plt.legend()
     plt.savefig('fig/Loss.png')
-    return plt.show()
+    plt.show()
+    plt.close()
 
 
-def train():
+def train(save_performance):
+
     model_G = Gen(num_GenFeatureMaps = 64, num_OutputChannels = 3, vector_size = 100).to(device)
     model_D = Disc(num_Channels = 3, num_DisFeaturesMaps = 64, vector_size = 100).to(device)
 
@@ -71,8 +75,8 @@ def train():
     real_imgLable = 1
     fake_imgLabel = 0
 
-    optimizerD = optim.Adam(model_D.parameters(), lr= 0.002, betas=(0.5, 0.999))
-    optimizerG = optim.Adam(model_G.parameters(), lr= 0.002, betas=(0.5, 0.999))
+    optimizerD = optim.Adam(model_D.parameters(), lr= 0.0001, betas=(0.5, 0.999))
+    optimizerG = optim.Adam(model_G.parameters(), lr= 0.0001, betas=(0.5, 0.999))
 
 
     img_list = []
@@ -130,10 +134,10 @@ def train():
             errG.backward()
             D_G_z2 = errG.mean().item()
             optimizerG.step()
-
-            print("For iter {}/{} with epoch {} LossD {} LossG {} D(X) {} D(G(z)) {}/{}".format(i+1,len(datasetLoader), epoch+1, errD.item(), errG.item(),D_x, D_G_z1, D_G_z2))
-            with open('performance.txt', 'w') as f:
-                f.write("For iter {}/{} with epoch {} LossD {} LossG {} D(X) {} D(G(z)) {}/{}\n\n".format(i+1,len(datasetLoader), epoch+1, errD.item(), errG.item(),D_x, D_G_z1, D_G_z2))
+            if i%100==0:
+                print("For iter {}/{} with epoch {} LossD {} LossG {} D(X) {} D(G(z)) {}/{}".format(i+1,len(datasetLoader), epoch+1, errD.item(), errG.item(),D_x, D_G_z1, D_G_z2))
+                with open(save_performance, 'a') as f:
+                    f.write("\nFor [{}/{}] with epoch:{}, LossD:{}, LossG:{}, D(X):{}, D(G(z)):{}/{}\n".format(i+1,len(datasetLoader), epoch+1, errD.item(), errG.item(),D_x, D_G_z1, D_G_z2))
 
             G_loss.append(errG.item())
             D_loss.append(errD.item())
@@ -144,20 +148,21 @@ def train():
                     fake_image = model_G(fixed_noise).detach().cpu()
                 img_list.append(vutils.make_grid(fake_image, padding=2,normalize=True))
                 iters += 1
-        break
+        torch.save(model_G, 'models/generator_model')
+        torch.save(model_D, 'models/discriminator_model')
     loss_plot = plot_fig(Gen_losses=G_loss, Dis_losses=D_loss)
     return loss_plot, img_list
 
 if __name__ == '__main__':
-    loss_plot, img_list = train()
+    loss_plot, img_list = train(save_performance='results/performance.txt')
     # visualize the fake images
     fig = plt.figure(figsize=(8,8))
     plt.axis("off")
     img = [[plt.imshow(np.transpose(i, (1,2,0)),animated= True)] for i in img_list]
     animation_ = annime.ArtistAnimation(fig, img, interval= 1000, repeat_delay= 1000, blit=True)
     animation_.save('fig/animation.gif', writer= 'imagemagick',fps=60)
-    print(loss_plot)
-    print(HTML(animation_.to_jshtml()))
+    HTML(animation_.to_jshtml())
+
 
 
 
