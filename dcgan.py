@@ -28,7 +28,6 @@ def get_args():
 torch.manual_seed(546)
 
 image_size = 64  # using image size as 64x64 with 3 channel i.e 3x64x64
-total_epochs = 15
 # path = 'results/performance.txt'
 dataset = dset.ImageFolder(root = 'data/celeba', transform = transform.Compose([transform.Resize(image_size),
                                                                             transform.CenterCrop(image_size),
@@ -36,7 +35,7 @@ dataset = dset.ImageFolder(root = 'data/celeba', transform = transform.Compose([
                                                                             transform.Normalize((0.5,0.5,0.5),
                                                                                                 (0.5,0.5,0.5))]))
 
-datasetLoader = DataLoader(dataset=dataset, batch_size=128, shuffle=True)
+datasetLoader = DataLoader(dataset=dataset, batch_size=256, shuffle=True)
 device = torch.device("cuda:0" if torch.cuda.is_available() else 'cpu')
 sample  = iter(datasetLoader).__next__()
 # print(vutils.make_grid(sample[0].to(device)[:64], padding= 2, normalize= True).cpu().size())
@@ -54,7 +53,7 @@ def weights_init(m):
     if classname.find('Conv') != -1:
         nn.init.normal_(m.weight.data, 0.0, 0.02)
     elif classname.find('BatchNorm') !=-1:
-        nn.init.normal_(m.weight.data, 1.0, 0.02)
+        nn.init.normal_(m.weight.data, 0.0, 0.02)
         nn.init.constant_(m.bias.data, 0)
 
 def plot_fig(Gen_losses, Dis_losses):
@@ -143,7 +142,8 @@ def train(save_performance, opt):
             optimizerG.step()
 
             print("Iter:[{}/{}]\tEpoch:[{}/{}]\tLossD:{}\tLossG:{}\tD(X):{}\tD(G(z)):{}/{}".format(i+1,len(datasetLoader), epoch+1,opt.num_epochs, errD.item(), errG.item(),D_x, D_G_z1, D_G_z2))
-            if i+1 % len(datasetLoader) == 0:
+
+            if (i+1) % len(datasetLoader) == 0:
                 with open(save_performance, 'a') as f:
                     f.write("Iter:[{}/{}]\tEpoch:[{}/{}]\tLossD:{}\tLossG:{}\tD(X):{}\tD(G(z)):{}/{}\n".format(i+1,len(datasetLoader), epoch+1,opt.num_epochs, errD.item(), errG.item(),D_x, D_G_z1, D_G_z2))
 
@@ -151,7 +151,7 @@ def train(save_performance, opt):
             D_loss.append(errD.item())
 
             # print fake images with a frequency of 500 iterations of update to Generator network weights
-            if (iters% 500 ==0) or (epoch+1 == opt.num_epochs) or (i+1==len(datasetLoader)):
+            if (iters% 500 ==0) or ((epoch+1) == opt.num_epochs) or ((i+1)==len(datasetLoader)):
                 with torch.no_grad():
                     fake_image = model_G(fixed_noise).detach().cpu()
                 img_list.append(vutils.make_grid(fake_image, padding=2,normalize=True))
@@ -169,8 +169,6 @@ def train(save_performance, opt):
 if __name__ == '__main__':
     opt= get_args()
     img_list = train(save_performance='results/performance.txt', opt=opt)
-    with open('results/fake_images.pkl', 'wb') as f:
-        pickle.dump(img_list, file=f)
     # visualize the fake images
     fig = plt.figure(figsize=(8,8))
     plt.axis("off")
@@ -179,6 +177,8 @@ if __name__ == '__main__':
     animation_.save('fig/animation.gif', writer= 'imagemagick',fps=60)
     plt.show()
     print(HTML(animation_.to_jshtml()))
+    with open('results/fake_images.pkl', 'wb') as f:
+        pickle.dump(img_list, file=f)
 
 
 
