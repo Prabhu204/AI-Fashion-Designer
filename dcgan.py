@@ -15,13 +15,13 @@ import numpy as np
 from src.generator import Gen
 from src.discriminator import Disc
 import matplotlib.animation as annime
-from IPython.display import HTML
+from IPython.display import HTML, display
 import pickle
 import argparse
 
 def get_args():
     parser = argparse.ArgumentParser("""Train DCGAN for creating fake images""")
-    parser.add_argument('-e', "--num_epochs", type=int, default= 35)
+    parser.add_argument('-e', "--num_epochs", type=int, default= 10)
     args = parser.parse_args()
     return args
 
@@ -35,7 +35,7 @@ dataset = dset.ImageFolder(root = 'data/celeba', transform = transform.Compose([
                                                                             transform.Normalize((0.5,0.5,0.5),
                                                                                                 (0.5,0.5,0.5))]))
 
-datasetLoader = DataLoader(dataset=dataset, batch_size=256, shuffle=True)
+datasetLoader = DataLoader(dataset=dataset, batch_size=1024, shuffle=True)
 device = torch.device("cuda:0" if torch.cuda.is_available() else 'cpu')
 sample  = iter(datasetLoader).__next__()
 # print(vutils.make_grid(sample[0].to(device)[:64], padding= 2, normalize= True).cpu().size())
@@ -53,8 +53,8 @@ def weights_init(m):
     if classname.find('Conv') != -1:
         nn.init.normal_(m.weight.data, 0.0, 0.02)
     elif classname.find('BatchNorm') !=-1:
-        nn.init.normal_(m.weight.data, 0.0, 0.02)
-        nn.init.constant_(m.bias.data, 0)
+        nn.init.normal_(m.weight.data, 1.0, 0.02)
+        m.bias.data.fill_(0)
 
 def plot_fig(Gen_losses, Dis_losses):
     plt.figure(figsize=(10,8))
@@ -64,11 +64,11 @@ def plot_fig(Gen_losses, Dis_losses):
     plt.xlabel("Iterations")
     plt.ylabel("Loss")
     plt.legend()
-    plt.savefig('fig/Loss.png')
+    plt.savefig('fig/Loss_ns.png')
     return plt.draw()
 
 
-def train(save_performance, opt):
+def train(save_performance, opt, weights_init):
 
     model_G = Gen(num_GenFeatureMaps = 64, num_OutputChannels = 3, vector_size = 100).to(device)
     model_D = Disc(num_Channels = 3, num_DisFeaturesMaps = 64, vector_size = 100).to(device)
@@ -82,8 +82,8 @@ def train(save_performance, opt):
     real_imgLable = 1
     fake_imgLabel = 0
 
-    optimizerD = optim.Adam(model_D.parameters(), lr= 0.0002, betas=(0.5, 0.999))
-    optimizerG = optim.Adam(model_G.parameters(), lr= 0.0002, betas=(0.5, 0.999))
+    optimizerD = optim.Adam(model_D.parameters(), lr= 0.0001, betas=(0.5, 0.999))
+    optimizerG = optim.Adam(model_G.parameters(), lr= 0.001, betas=(0.5, 0.999))
 
     img_list = []
     G_loss = []
@@ -156,29 +156,38 @@ def train(save_performance, opt):
                     fake_image = model_G(fixed_noise).detach().cpu()
                 img_list.append(vutils.make_grid(fake_image, padding=2,normalize=True))
                 iters += 1
-        torch.save(model_G, 'models/generator_model')
-        torch.save(model_D, 'models/discriminator_model')
+        torch.save(model_G, 'models/generator_model_ns')
+        torch.save(model_D, 'models/discriminator_model_ns')
         plot_fig(Gen_losses=G_loss, Dis_losses=D_loss)
     losses ={}
     losses['G_loss']=G_loss
     losses['D_loss']=D_loss
-    with open('results/losses.pkl','wb') as f:
+    with open('results/losses_ns.pkl','wb') as f:
         pickle.dump(losses, f)
     return img_list
 
 if __name__ == '__main__':
     opt= get_args()
-    img_list = train(save_performance='results/performance.txt', opt=opt)
+    img_list = train(save_performance='results/performance.txt', opt=opt, weights_init=weights_init)
+    modelG = torch.load('models/generator_model_ns')
+    fixed_noise = torch.randn(64, 100, 1,1, device=device)
+    fake_image = modelG(fixed_noise).detach().cpu()
+    i = vutils.make_grid(fake_image, padding=2, normalize=True)
+    plt.imshow(np.transpose(i, (1, 2, 0)), animated=True)
+    plt.savefig('fig/fake_images_ns.png')
     # visualize the fake images
     fig = plt.figure(figsize=(8,8))
     plt.axis("off")
     img = [[plt.imshow(np.transpose(i, (1,2,0)),animated= True)] for i in img_list]
     animation_ = annime.ArtistAnimation(fig, img, interval= 1000, repeat_delay= 1000, blit=True)
-    animation_.save('fig/animation.gif', writer= 'imagemagick',fps=60)
-    plt.show()
-    print(HTML(animation_.to_jshtml()))
-    with open('results/fake_images.pkl', 'wb') as f:
-        pickle.dump(img_list, file=f)
+    print(display(HTML(animation_.to_jshtml()).data))
+    print(animation_.to_html5_video(embed_limit=None))
+    print('**********************************')
+    animation_.save(filename='results/anime_movie_ns')
+
+    # with open('results/fake_images.pkl', 'wb') as f:
+    #     pickle.dump(img_list, file=f)
+
 
 
 

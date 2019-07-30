@@ -31,6 +31,7 @@ class Gen(nn.Module):
                                     nn.Tanh())    # tanh function returns input data range [-1, 1]
 
     def forward(self, x):
+        x = x.view(-1,self.vector_size,1,1)
         output = self.ConvG1(x)
         output = self.ConvG2(output)
         output = self.ConvG3(output)

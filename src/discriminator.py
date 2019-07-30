@@ -34,3 +34,6 @@ class Disc(nn.Module):
         output = self.ConvD4(output)
         output = self.ConvD5(output)
         return output
+
+if __name__ == '__main__':
+    print(Disc(num_Channels=3, num_DisFeaturesMaps=64,vector_size=100))

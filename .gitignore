@@ -104,4 +104,4 @@ venv.bak/
 .idea/
 data/
 models/
-
+results/fake_images.pkl
